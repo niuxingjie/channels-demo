@@ -13,7 +13,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-
+        print('-------connect--------')
+        print(self.channel_name)
         await self.accept()
     
     async def disconnect(self, close_code):
@@ -21,8 +22,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        print('-------disconnect--------')
+        print(self.channel_name)
 
     async def receive(self, text_data):
+        print('-------reveive--------')
+        print(self.channel_name)
+
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
 
@@ -34,6 +40,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
     async def chat_message(self, event):
+        print('-------chat_message--------')
+        print(self.channel_name)
+
         message = event['message']
 
         await self.send(text_data=json.dumps({

@@ -15,11 +15,12 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 
 import chat.routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'channels_demo.settings')
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'channels_demo.settings')
 django_asgi_application = get_asgi_application()
 
 
+# 协议级别的路由分发
 application = ProtocolTypeRouter({
     # (http->django views is added by default)
     'http':django_asgi_application,  # http协议使用django asgi处理
