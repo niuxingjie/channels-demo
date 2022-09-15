@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'chat.Speaker'
 
 # Application definition
 
@@ -37,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    
     'chat',
     'channels',
 ]
@@ -137,3 +141,19 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+# DRF
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
+}
+
+# SIMPLE_JWT = {
+#     "USER_ID_CLAIM": "id",
+#     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+#     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+# }

@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Org, Speaker, Bulletin, Message
+
+
+admin.site.register([Org, Speaker, Bulletin, Message])
+

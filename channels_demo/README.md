@@ -6,9 +6,11 @@ python manage.py runserver 0.0.0.0:8000
 
 打开两个页面
 
-http://127.0.0.1:8000/chat/cartoon/
+http://127.0.0.1:8000/chat/room/cartoon/
 
-http://127.0.0.1:8000/chat/cartoon/
+http://127.0.0.1:8000/chat/room/cartoon/
+
+F12 中可以看到http和ws类型的请求
 
 从shell中拷贝出channel_name
 
@@ -31,9 +33,80 @@ pip install --no-deps -r requirements.txt
 python manage.py migrate
 
 gunicorn channels_demo.asgi:application --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+- 用户
+```text
+超级管理员
+username:admin
+password:admin
+
+普通用户：
+user001
+user001
+```
+
+- 群发消息测试
+```
+第一步：登录
+    url:http://127.0.0.1:8000/api/token/
+    method:post
+    body：
+    {
+        "username": "admin",
+        "password": "admin"
+    }
+    request：
+    {
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY2MzMxMTY1MCwiaWF0IjoxNjYzMjI1MjUwLCJqdGkiOiIzY2IxZjQ0YThiMDE0MDNjYTZkMGU3Mjg2OWYwODQ1MiIsInVzZXJfaWQiOjF9.h26pH0ThiOTetKYg9-iNq3sIcs4MJ_ctpv4XB_F0Tr4",
+        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjYzMjI1NTUwLCJpYXQiOjE2NjMyMjUyNTAsImp0aSI6IjM1NGEzYTQ4ODg3NDQ5NGU4MmVhMzA1NDU3YzFiM2EwIiwidXNlcl9pZCI6MX0.0buRKRsjSb8osLE9hT1klpO3McWGMXFjOaXN9WX4mvs"
+    }
+
+
+第二步：配置用户token
+    将上面拿到的access的token替换到message.html文件里
+    访问http://127.0.0.1:8000/chat/messsage_client/页面
+    shell里可以看到登录用户信息的日志
+
+
+第三步：python manage.py shell 里群发消息
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)("all_user_ws_client", {
+        "type": "notify.message", 
+        "message": "Hello there!",
+    })
 
 ```
 
+
+
+### 请求与推送实现方案分析：
+
+- 请求与推送实现方案分析
+```text
+用于处理用户消息及公告消息：
+    - 请求：
+        - 列表页
+            - 过滤条件
+            - 分页
+        - 详情页
+    - 推送：
+        - 新增消息后，主动推送给用户
+
+方案1：
+    - 请求：完全可以仍使用http请求。
+    - 推送：
+        - 单个用户（代表组织）建立一个唯一个group组，用于服务器主动向用户推送消息。
+        - 此推送，可以根据推送类型，处理不同的推送（消息推送，新品上架）
+        - 推送，只是告诉客户端，某类型数据有更新，请重新发送http请求最新数据
+        - 前端只需给每个用户建立一个websocket链接，等待推送即可。
+    - 消息通知系统是可以使用的。
+
+方案2：
+    - 请求，推送：全部通过wedsocket实现。
+```
 
 
 ## Django Channels 学习记录

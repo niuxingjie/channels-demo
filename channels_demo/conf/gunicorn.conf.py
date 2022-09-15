@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-@File        : gunicorn.conf.py
-@Author      : liuda
-@Time        : 2022-01-13 10:06
-@Description :
-"""
 import multiprocessing
 
 # 后台运行

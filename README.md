@@ -9,5 +9,5 @@ django-admin startproject channels_demo
 python manage.py startapp chat
 
 
-
+python manage.py startapp profile
 
