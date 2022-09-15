@@ -1,8 +1,14 @@
 from email import message
 import json
 
+from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer, JsonWebsocketConsumer
+from channels.layers import get_channel_layer
 
+
+
+MESSAGE_BROADCAST_GROUP_NAME = "all_user_ws_client"
+MESSAGE_USER_GROUP_NAME_TEMPLATE = "{user_id}_ws_clients"  # 不能用冒号
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -52,43 +58,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 class MessageConsumer(JsonWebsocketConsumer):
     """
-    用于处理用户消息及公告消息：
-        - 请求：
-            - 列表页
-                - 过滤条件
-                - 分页
-            - 详情页
-        - 推送：
-            - 新增消息后，主动推送给用户
-
-    方案1：(此处选择的方案)
-        - 请求：完全可以仍使用http请求。
-        - 推送：
-            - 单个用户（代表组织）建立一个唯一个group组，用于服务器主动向用户推送消息。
-            - 此推送，可以根据推送类型，处理不同的推送（消息推送，新品上架）
-            - 推送，只是告诉客户端，某类型数据有更新，请重新发送http请求最新数据
-        - 消息通知系统是可以使用的。
-
-    方案2：
-        - 请求，推送：全部通过wedsocket实现。
-        - 更适合聊天室这种对“传输增量数据”要求较高的场景。
+    用于消息接收页面建立websocket连接：
     """
-    MESSAGE_GROUP_NAME_TEMPLATE = "{org_id}:{user_id}"
     
     # 所有的ws client都加入一个组，用于平台消息推送（广播消息）
-    # 只要是websocket链接会自动将self.channel_name加入此组
-    groups = ["all_user_ws_client"]
+    # 只要是websocket链接会自动将self.channel_name加入此组(看源码：websocket_connect方法)，连接断开时，自动移除出组
+    groups = [MESSAGE_BROADCAST_GROUP_NAME, ]
 
     def connect(self):
         print('-----connect-----')
         print(f"login_user:{self.scope['user']}")
-        self.groups.append(self.channel_name)
+        
+        # 加入用户channel group
+        login_user_group = MESSAGE_USER_GROUP_NAME_TEMPLATE.format(user_id=self.scope['user'].id)
+        async_to_sync(self.channel_layer.group_add)(login_user_group, self.channel_name)
         return super().connect()
     
     def disconnect(self, code):
+        # 连接断开时，移出组
+        login_user_group = MESSAGE_USER_GROUP_NAME_TEMPLATE.format(user_id=self.scope['user'].id)
+        async_to_sync(self.channel_layer.group_discard)(login_user_group, self.channel_name)
         return super().disconnect(code)
 
     def receive(self, text_data=None, bytes_data=None, **kwargs):
+        print('-----receive-----')
+        print(f"login_user:{self.scope['user']}")
         return super().receive(text_data, bytes_data, **kwargs)
 
     def notify_message(self, event):
@@ -99,15 +93,61 @@ class MessageConsumer(JsonWebsocketConsumer):
         from channels.layers import get_channel_layer
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)("all_user_ws_client", {
-            "type": "notify.message", 
+            "type": "notify.message",  # 特别注意这里要与当前方法名对应
             "message": "Hello there!",
         })
         """
+        print('------notify_message------')
+        print(f"login_user:{self.scope['user']}")
         message = event['message']
 
         self.send(text_data=json.dumps({
             "message": message
         }))
 
+
+class NotifyService:
+
+    @classmethod
+    def broadcast(cls, message, channel_group_name=MESSAGE_BROADCAST_GROUP_NAME):
+        """
+        群发消息：
+            - 公告:
+        
+        示例：
+            from chat.consumers import NotifyService
+            NotifyService.broadcast("Hello",channel_group_name="all_user_ws_client")
+        """
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(channel_group_name, {
+            "type": "notify.message", 
+            "message": message,
+        })
+
+    @classmethod
+    def dialogue(cls, user_list, message):
+        """
+        给用户单独发消息：
+            - 指的是那些打开页面，建立了ws连接的用户
+            - 那些没有打开页面的用户，数据库里自然也会有数据，当他打开页面时，获取的数据便是最新的
+        方案2:
+            - 此消息仅用于通知client后端的某类数据有更新，请重新发送请求获取相关类型数据的最新数据。
+
+        示例：
+            from chat.consumers import NotifyService
+            from chat.models import Speaker
+            speaker=Speaker.objects.get(username='admin')
+            NotifyService.broadcast("Hello Everyone！",channel_group_name="all_user_ws_client")
+            NotifyService.dialogue([speaker,],"hello buddy！")
+        """
+        channel_layer = get_channel_layer()
+        for u in user_list:
+            user_group_name = MESSAGE_USER_GROUP_NAME_TEMPLATE.format(user_id=u.id)
+            print('----dialogue----')
+            print(user_group_name)
+            async_to_sync(channel_layer.group_send)(user_group_name, {
+                "type": "notify.message", 
+                "message": message,
+            })
 
 

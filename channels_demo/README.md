@@ -47,7 +47,7 @@ user001
 ```
 
 - 群发消息测试
-```
+```text
 第一步：登录
     url:http://127.0.0.1:8000/api/token/
     method:post
@@ -108,6 +108,15 @@ user001
     - 请求，推送：全部通过wedsocket实现。
 ```
 
+- django channels 实现推送群发与单发的点：
+```text
+前提知识：每个websocket connection 对应着一个channel_name
+
+群发：就定义一个group_name(如：all_user_ws_client) 将所有激活的channel_name放进去，然后对group_name进行消息发送
+
+单发：给每个用户定义一个group_name(如：{user_id}_group) 将请求登录人相同的channel_name放在一起，，然后对group_name进行消息发送
+
+```
 
 ## Django Channels 学习记录
 
