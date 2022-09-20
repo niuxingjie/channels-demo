@@ -48,25 +48,16 @@ user001
 
 - 群发消息测试
 ```text
-第一步：登录
-    url:http://127.0.0.1:8000/api/token/
-    method:post
-    body：
-    {
-        "username": "admin",
-        "password": "admin"
-    }
-    request：
-    {
-        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY2MzMxMTY1MCwiaWF0IjoxNjYzMjI1MjUwLCJqdGkiOiIzY2IxZjQ0YThiMDE0MDNjYTZkMGU3Mjg2OWYwODQ1MiIsInVzZXJfaWQiOjF9.h26pH0ThiOTetKYg9-iNq3sIcs4MJ_ctpv4XB_F0Tr4",
-        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjYzMjI1NTUwLCJpYXQiOjE2NjMyMjUyNTAsImp0aSI6IjM1NGEzYTQ4ODg3NDQ5NGU4MmVhMzA1NDU3YzFiM2EwIiwidXNlcl9pZCI6MX0.0buRKRsjSb8osLE9hT1klpO3McWGMXFjOaXN9WX4mvs"
-    }
+第一步：django admin登录
+http://127.0.0.1:8000/admin/login/
 
 
-第二步：配置用户token
-    将上面拿到的access的token替换到message.html文件里
-    访问http://127.0.0.1:8000/chat/messsage_client/页面
-    shell里可以看到登录用户信息的日志
+第二步：打开接收消息的客户段
+
+http://127.0.0.1:8000/chat/messsage_client/
+当前使用的认证方式是cookie session认证，在wx的request里可以看到如下信息：
+    Cookie: csrftoken=jCLD0vTIO43woxfRGdKUGFype3sLOlYOj5NctP5zJVElQgqn5X3KEP5RjDHJEhzh; sessionid=0l94aiaaakqf3iwsg3paefe5czxq5wdr
+在django shell debug信息里也可以看到登录user的信息
 
 
 第三步：python manage.py shell 里群发消息
@@ -80,6 +71,10 @@ user001
 
 ```
 
+- TODO: 自定义认证引擎
+```
+奇怪：js 的new Websocket好像不提供设置header的方法，可能需要其他方法传递jwt token
+```
 
 
 ### 请求与推送实现方案分析：
