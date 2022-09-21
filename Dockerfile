@@ -1,7 +1,7 @@
 FROM python:3.8.14-slim
 ENV PYTHONDONTWRITEBYTECODE=1 
 ENV PYTHONUNBUFFERED=1 
-WORKDIR /channels_demo
+WORKDIR /channels_demo/channels_demo/
 COPY .  /channels_demo/
 RUN apt-get update \
     && apt-get install gcc libpq-dev git vim -y \

@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-fwo0bqrw_xv-ifk7g%@9m3zz3yb%=lhzl_n(c(g3)h-pv1=h2(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'chat.Speaker'
 
@@ -135,7 +135,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = "channels_demo.asgi.application"
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # 使用内存保存channel时，无法通过shell进行群发，因为跨进程内存不共享。
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 16379)],
+        # },
     },
 }
 
@@ -149,8 +153,6 @@ CHANNEL_LAYERS = {
 #     'PAGE_SIZE': 100,
 # }
 
-# SIMPLE_JWT = {
-#     "USER_ID_CLAIM": "id",
-#     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-#     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
-# }
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+}

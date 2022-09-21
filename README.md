@@ -71,9 +71,32 @@ http://127.0.0.1:8000/chat/messsage_client/
 
 ```
 
-- TODO: 自定义认证引擎
+- 自定义jwt认证引擎
 ```
 奇怪：js 的new Websocket好像不提供设置header的方法，可能需要其他方法传递jwt token
+注意： djangorestframework-simplejwt==4.7.2 其他版本可能会导致一直报invalid token错误（参考：https://github.com/jpadilla/pyjwt/issues/685）
+
+第一步：获取access_token
+http://127.0.0.1:8000/api/token/
+
+
+第二步：打开两个接收消息的客户端，相互发送消息
+
+http://127.0.0.1:8000/chat/messsage_client/
+将上面获取到的access token填入输入框，点击链接
+
+http://127.0.0.1:8000/chat/messsage_client/
+将上面获取到的access token填入输入框，点击链接
+
+
+第三步：python manage.py shell 里群发消息(只有使用redis作为channel数据缓存时，才可以。)
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)("all_user_ws_client", {
+        "type": "notify.message", 
+        "message": "Hello there!",
+    })
 ```
 
 

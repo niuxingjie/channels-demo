@@ -83,7 +83,18 @@ class MessageConsumer(JsonWebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None, **kwargs):
         print('-----receive-----')
         print(f"login_user:{self.scope['user']}")
-        return super().receive(text_data, bytes_data, **kwargs)
+
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        login_user_group = MESSAGE_USER_GROUP_NAME_TEMPLATE.format(user_id=self.scope['user'].id)
+
+        async_to_sync(self.channel_layer.group_send)(
+            login_user_group,
+            {
+                "type":"notify.message",
+                "message": message
+            }
+        )
 
     def notify_message(self, event):
         """
